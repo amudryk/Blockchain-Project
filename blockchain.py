@@ -39,7 +39,7 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 def get_transaction_value():
-    recipient = input('Enter recipient of the transaction: ')
+    recipient = str(input('Enter recipient of the transaction: '))
     amount = float(input('Your transaction amount: '))
     return (recipient, amount)
 
@@ -51,15 +51,14 @@ def hash_block(block):
     return hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest()
 
 def load_data():
-    with open ('blockchain.txt', mode='r') as file:
-        #comment out pickle(binary) code
+    with open ('blockchain.txt', mode='r') as f:
         #file_content = pickle.loads(file.read())
-        file_content = file.readlines()
-        global blockchain
-        global open_transactions
-        
         #blockchain = file_content['chain']
         #open_transactions = file_content['ot']
+        
+        file_content = f.readlines()
+        global blockchain
+        global open_transactions
         
         blockchain = json.loads(file_content[0][:-1])
         updated_blockchain = []
@@ -76,9 +75,9 @@ def load_data():
         open_transactions = json.loads(file_content[1])
         updated_transactions = []
         for tx in open_transactions:
-            updated_transaction = collections.OrderedDict(
+             updated_transaction = collections.OrderedDict(
                 [('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) 
-            updated_transactions.append(updated_transaction)
+             updated_transactions.append(updated_transaction)
         open_transactions = updated_transactions
 
 
@@ -87,7 +86,6 @@ load_data()
 def mine_block():
     last_block = blockchain[-1]
     previous_hash = hash_block(last_block)
-    
     proof = proof_of_work()
     
     #reward_transaction = {'sender':'MINING', 'recipient': owner, 'amount': MINING_REWARD}
@@ -97,37 +95,36 @@ def mine_block():
     copied_transactions.append(reward_transaction)
     block = {'previous_hash': previous_hash, 'transactions': copied_transactions, 'proof': proof }
     blockchain.append(block)
-    save_data()
     return True 
 
 def print_blockchain_elements():
     for block in blockchain:
-        print('Outputting block')
+        print('Outputting block:')
         print(block)
     else:
          print('-' * 20)
 
 def save_data():
-    with open('blockchain.txt', mode='w') as file:
-        file.write(json.dumps(blockchain))
-        file.write('\n')
-        file.write(json.dumps(open_transactions))
+    with open('blockchain.txt', mode='w') as f:
+        f.write(json.dumps(blockchain))
+        f.write('\n')
+        f.write(json.dumps(open_transactions))
         
         #pickle(binary) code
         #save_data = { 'chain': blockchain, 'ot': open_transactions }
         #file.write(pickle.dumps(save_data))
 
-def valid_proof(transactions, previous_hash, proof):
-    guess = (str(transactions) + str(previous_hash) + str(proof)).encode()
+def valid_proof(transactions, last_hash, proof):
+    guess = (str(transactions) + str(last_hash) + str(proof)).encode()
     guess_hash = hashlib.sha256(guess).hexdigest()
     print(guess_hash)
     return guess_hash[0:2] == '99'
 
 def proof_of_work():
     last_block = blockchain[-1]
-    previous_hash = hash_block(last_block)
+    last_hash = hash_block(last_block)
     proof = 0
-    while not valid_proof(open_transactions, previous_hash, proof):
+    while not valid_proof(open_transactions, last_hash, proof):
         proof += 1
     return proof
 
@@ -160,52 +157,52 @@ while waiting_for_input:
     print('1: Manipulate the chain')
     print('0: Quit')
     user_input = get_user_input()
-    if user_input == 6:
+    if user_input == '6':
         if verify_transactions():
             print('All transactions valid')
         else:
             print('There are invalid transactions')    
     
-    elif user_input == 5:
+    elif user_input == '5':
         print(participants)
            
-    elif user_input == 4:
+    elif user_input == '4':
        if mine_block():
            open_transactions = []
            save_data()
 
-    elif user_input == 3:
+    elif user_input == '3':
         tx_data = get_transaction_value()
-        recipient , amount = tx_data
-        if add_transaction(recipient, amount=amount):
+        recipient, amount = tx_data
+        if add_transaction(recipient=recipient, amount=amount):
             print('Added transaction!')
         else:
             print('Transaction Failed!')
         print(open_transactions)
 
-    elif user_input == 2:  
+    elif user_input == '2':  
         print_blockchain_elements()
 
-    elif user_input == 1:
+    elif user_input == '1':
         if len(blockchain) >= 1:    
             blockchain[0] = {
                 'previous_hash': '', 
                 'transactions': [{'sender': 'John', 'recipient': 'Adam', 'amount': 100}]
             }
 
-    elif user_input == 0:    
+    elif user_input == '0':    
         waiting_for_input = False
 
     else: 
         print('Input invalid. Please try Again!')
         
     if not verify_chain(): 
-       print_blockchain_elements()
+       #print_blockchain_elements()
        print ('Invalid Blockchain')
        break
     print('Balances: \n{}: {:10.2f}'.format(owner,get_balance('Adam'))) 
     
-print('Balances: \n{}: {:10.2f}'.format(owner,get_balance('Adam'))) 
+
 print('Done!')
 
 
