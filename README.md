@@ -1,3 +1,2 @@
-# Blockchain-Project
-# Udemy blockchain project
+# Udemy Blockchain-Project
 Note:the html file which provides a UI is not my code
