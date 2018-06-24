@@ -1,2 +1,2 @@
-# Blockchain-Project
-Udemy course blockchain project to learn Python
+# Udemy Blockchain-Project
+Note:the html file which provides a UI is not my code
