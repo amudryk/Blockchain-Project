@@ -14,7 +14,7 @@ MINING_REWARD = 10
 
 class Blockchain:
     def __init__(self, hosting_node_id):
-        genesis_block = Block('', 1, [], 99, 0)
+        genesis_block = Block('', [], 99, 0)
         self.__chain = [genesis_block]
         self.__open_transactions = []
         self.load_data()
@@ -68,7 +68,7 @@ class Blockchain:
                 updated_blockchain = []
                 for block in blockchain:
                     converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
-                    updated_block = Block(block['previous_hash'], block['index'], converted_tx, block['proof'], block['timestamp'])
+                    updated_block = Block(block['previous_hash'], converted_tx, block['proof'], block['timestamp'])
                     updated_blockchain.append(updated_block)
                 self.__chain = updated_blockchain
                 
@@ -89,7 +89,7 @@ class Blockchain:
         last_block = self.__chain[-1]
         previous_hash = hash_block(last_block)
         proof = self.proof_of_work()
-        index = (last_block.index + 1)
+        
 
         #reward_transaction = {'sender':'MINING', 'recipient': owner, 'amount': MINING_REWARD}
         reward_transaction = Transaction('MINING', self.hosting_node, '', MINING_REWARD)
@@ -101,7 +101,7 @@ class Blockchain:
                 return None
         
         copied_transactions.append(reward_transaction)
-        mined_block = Block(previous_hash, index, copied_transactions, proof)
+        mined_block = Block(previous_hash, copied_transactions, proof)
      
         self.__chain.append(mined_block)
         self.__open_transactions = []
