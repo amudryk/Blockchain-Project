@@ -2,7 +2,7 @@ import functools
 import hashlib
 import json
 import collections
-import pickle
+#import pickle
 
 from hash import hash_block
 from block import Block
@@ -17,8 +17,10 @@ class Blockchain:
         genesis_block = Block('', [], 99, 0)
         self.__chain = [genesis_block]
         self.__open_transactions = []
+        self.__peer_nodes = set()
         self.load_data()
         self.hosting_node = hosting_node_id
+        
 
     def get_chain(self):
         return self.__chain[:]
@@ -37,6 +39,32 @@ class Blockchain:
             self.save_data()
             return True 
         return False
+    
+    def mine_block(self):
+        if self.hosting_node == None:
+            return None
+        
+        last_block = self.__chain[-1]
+        previous_hash = hash_block(last_block)
+        proof = self.proof_of_work()
+        
+
+        #reward_transaction = {'sender':'MINING', 'recipient': owner, 'amount': MINING_REWARD}
+        reward_transaction = Transaction('MINING', self.hosting_node, '', MINING_REWARD)
+        
+        copied_transactions = self.__open_transactions[:]
+        
+        for tx in copied_transactions:
+            if not Wallet.verify_transaction(tx):
+                return None
+        
+        copied_transactions.append(reward_transaction)
+        mined_block = Block(previous_hash, copied_transactions, proof)
+     
+        self.__chain.append(mined_block)
+        self.__open_transactions = []
+        self.save_data()
+        return mined_block
 
     def get_balance(self):
         if self.hosting_node == None:
@@ -64,7 +92,6 @@ class Blockchain:
                 file_content = f.readlines()
                 
                 blockchain = json.loads(file_content[0][:-1])
-                
                 updated_blockchain = []
                 for block in blockchain:
                     converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
@@ -72,42 +99,19 @@ class Blockchain:
                     updated_blockchain.append(updated_block)
                 self.__chain = updated_blockchain
                 
-                open_transactions = json.loads(file_content[1])
+                open_transactions = json.loads(file_content[1][:-1])
                 updated_transactions = []
                 for tx in open_transactions:
                     updated_transaction = Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount'])
                     updated_transactions.append(updated_transaction)
                 self.__open_transactions = updated_transactions
-        
+
+                peer_nodes = json.loads(file_content[2])
+                self.__peer_nodes = set(peer_nodes)
         except (IOError,IndexError):
             pass
 
-    def mine_block(self):
-        if self.hosting_node == None:
-            return None
-        
-        last_block = self.__chain[-1]
-        previous_hash = hash_block(last_block)
-        proof = self.proof_of_work()
-        
-
-        #reward_transaction = {'sender':'MINING', 'recipient': owner, 'amount': MINING_REWARD}
-        reward_transaction = Transaction('MINING', self.hosting_node, '', MINING_REWARD)
-        
-        copied_transactions = self.__open_transactions[:]
-        
-        for tx in copied_transactions:
-            if not Wallet.verify_transaction(tx):
-                return None
-        
-        copied_transactions.append(reward_transaction)
-        mined_block = Block(previous_hash, copied_transactions, proof)
-     
-        self.__chain.append(mined_block)
-        self.__open_transactions = []
-        self.save_data()
-        return mined_block
-
+    
     def save_data(self):
         try:
             with open('blockchain.txt', mode='w') as f:
@@ -116,6 +120,8 @@ class Blockchain:
                 f.write('\n')
                 saveable_otx = [tx.__dict__ for tx in self.__open_transactions]
                 f.write(json.dumps(saveable_otx))
+                f.write('\n')
+                f.write(json.dumps(list(self.__peer_nodes)))
                 
                 #pickle(binary) code
                 #save_data = { 'chain': blockchain, 'ot': open_transactions }
@@ -131,7 +137,15 @@ class Blockchain:
             proof += 1
         return proof
 
+    def add_peer_node(self, node):
+        self.__peer_nodes.add(node)
+        self.save_data()
 
-      
+    def remove_peer_node(self, node):
+        self.__peer_nodes.discard(node)
+        self.save_data()
+
+    def get_peer_nodes(self):
+        return list(self.__peer_nodes)  
 
 
