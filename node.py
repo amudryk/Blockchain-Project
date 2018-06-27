@@ -131,5 +131,35 @@ def get_open_transaction():
     dict_transactions = [tx.__dict__ for tx in transactions]
     return jsonify(dict_transactions), 200
 
+@app.route('/node', methods=['POST'])
+def add_node():
+    values = request.get_json()
+    if not values:
+        response = {'message': 'No data attached.'}
+        return jsonify(response), 400
+    if 'node' not in values:
+        response = {'message': 'No node data.'}
+        return jsonify(response), 400
+    node = values['node']
+    blockchain.add_peer_node(node)
+    response = {
+        'message': 'Node added successfully.',
+        'node_list': blockchain.get_peer_nodes()
+    }
+    return jsonify(response), 201
+
+#ex./node/localhost:1000
+@app.route('/node/<node_url>', methods=['DELETE'])
+def remove_node(node_url):
+    if node_url == '' or node_url == None:
+        response = {'message': 'No node data'}
+        return jsonify(response), 400
+    blockchain.remove_peer_node(node_url)
+    response = {
+        'message': 'Node removed successfully.',
+        'node_list': blockchain.get_peer_nodes()
+    }
+    return jsonify(response), 200
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9999)

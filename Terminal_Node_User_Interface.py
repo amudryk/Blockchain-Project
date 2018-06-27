@@ -34,6 +34,8 @@ class Node:
             print('5: Create wallet')
             print('6: Load wallet')
             print('7: Save wallet')
+            print('8: Add Node')
+            print('9: Remove Node')
             print('q: Quit')
             user_input = input('Your choice: ')  
             print('\n')
@@ -71,6 +73,16 @@ class Node:
             
             elif user_input == '7':
                 self.wallet.save_keys()
+            
+            #elif user_input == '8':
+             #   node = (input('Enter Node URL: '))
+              #  self.blockchain.add_peer_node(node)
+               # print(self.blockchain.get_peer_nodes())
+
+            #elif user_input == '9':
+             #   node = (input('Enter Node URL: '))
+              #  self.blockchain.remove_peer_node(node)
+               # print(self.blockchain.get_peer_nodes())
 
             elif user_input == 'q':    
                 waiting_for_input = False
