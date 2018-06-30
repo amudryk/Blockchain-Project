@@ -5,20 +5,22 @@ from wallet import Wallet
 from blockchain import Blockchain
 
 app = Flask(__name__)
-wallet = Wallet()
-blockchain = Blockchain(wallet.public_key)
 CORS(app)
 
 @app.route('/', methods=['GET'])
 def get_ui():
     return send_from_directory('ui', 'node.html')
 
+@app.route('/network', methods=['GET'])
+def get_network_ui():
+    return send_from_directory('ui', 'network.html')
+
 @app.route('/wallet', methods=['POST'])
 def create_keys():
     wallet.create_keys()
     if wallet.save_keys():
         global blockchain
-        blockchain = Blockchain(wallet.public_key)
+        blockchain = Blockchain(wallet.public_key, port)
         response = {
             'public_key': wallet.public_key,
             'private_key': wallet.private_key,
@@ -33,7 +35,7 @@ def create_keys():
 def load_keys():
     if wallet.load_keys():
         global blockchain
-        blockchain = Blockchain(wallet.public_key)
+        blockchain = Blockchain(wallet.public_key, port)
         response = {
             'public_key': wallet.public_key,
             'private_key': wallet.private_key,
@@ -131,7 +133,7 @@ def get_open_transaction():
     dict_transactions = [tx.__dict__ for tx in transactions]
     return jsonify(dict_transactions), 200
 
-@app.route('/node', methods=['POST'])
+@app.route('/nodes', methods=['POST'])
 def add_node():
     values = request.get_json()
     if not values:
@@ -148,8 +150,8 @@ def add_node():
     }
     return jsonify(response), 201
 
-#ex./node/localhost:1000
-@app.route('/node/<node_url>', methods=['DELETE'])
+# input ex./node/localhost:1000
+@app.route('/nodes/<node_url>', methods=['DELETE'])
 def remove_node(node_url):
     if node_url == '' or node_url == None:
         response = {'message': 'No node data'}
@@ -160,6 +162,19 @@ def remove_node(node_url):
         'node_list': blockchain.get_peer_nodes()
     }
     return jsonify(response), 200
+
+@app.route('/nodes', methods=['GET'])
+def get_node():
+    nodes = blockchain.get_peer_nodes()
+    response = {'nodes_list': nodes}
+    return jsonify(response), 200
     
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9999)
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--port', type=int, default = 9999)
+    args = parser.parse_args()
+    port = args.port
+    wallet = Wallet(port)
+    blockchain = Blockchain(wallet.public_key, port)
+    app.run(host='0.0.0.0', port=port)
