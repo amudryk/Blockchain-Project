@@ -74,16 +74,6 @@ class Node:
             elif user_input == '7':
                 self.wallet.save_keys()
             
-            #elif user_input == '8':
-             #   node = (input('Enter Node URL: '))
-              #  self.blockchain.add_peer_node(node)
-               # print(self.blockchain.get_peer_nodes())
-
-            #elif user_input == '9':
-             #   node = (input('Enter Node URL: '))
-              #  self.blockchain.remove_peer_node(node)
-               # print(self.blockchain.get_peer_nodes())
-
             elif user_input == 'q':    
                 waiting_for_input = False
 
