@@ -1,4 +1,5 @@
 # Udemy Blockchain-Project
 Notes:
-The node.html file which provides a UI which is not my code and requires some debugging.
-The Terminal_Node_User_Interface.py file provides an interface that provides all necessary functions and is complete.
+The .html files which provide a UI are not my code and requires some debugging.
+This version allows multiple nodes to be produced, and thus has more functionality in acting as a cryptocurrency amongst many users.
+Currently working on broadcasting blockchain to multiple nodes.
