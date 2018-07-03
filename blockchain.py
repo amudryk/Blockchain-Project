@@ -21,6 +21,7 @@ class Blockchain:
         self.__peer_nodes = set()
         self.public_key = public_key
         self.node_id = node_id
+        self.conflicts = False
         self.load_data()
         
 
@@ -34,7 +35,6 @@ class Blockchain:
         #if self.public_key == None:
         #    return False
         
-        #transaction = {'sender':sender, 'recipient': recipient, 'amount': amount}
         transaction = Transaction(hosting_node, recipient, signature, amount)
         if verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction) 
@@ -60,7 +60,6 @@ class Blockchain:
         previous_hash = hash_block(last_block)
         proof = self.proof_of_work()
         
-        #reward_transaction = {'sender':'MINING', 'recipient': owner, 'amount': MINING_REWARD}
         reward_transaction = Transaction('MINING', self.public_key, '', MINING_REWARD)
         
         copied_transactions = self.__open_transactions[:]
@@ -83,6 +82,8 @@ class Blockchain:
                 response = requests.post(url, json={'block': converted_mined_block})
                 if response.status_code == 400 or response.status_code == 500:
                     print('Block declined, needs resolving.')
+                if response.status_code == 409:
+                    self.conflicts = True
             except requests.exceptions.ConnectionError:
                 continue
         return mined_block
@@ -95,8 +96,40 @@ class Blockchain:
             return False
         converted_block = Block(block['index'], block['previous_hash'], transactions, block['proof'], block['timestamp'])
         self.__chain.append(converted_block)
+        stored_transactions = self.__open_transactions[:]
+        for tx in block['transactions']:
+            for opentx in stored_transactions:
+                if opentx.sender == tx['sender'] and opentx.recipient == tx['recipient'] and opentx.amount == tx['amount'] and opentx.signature in tx['signature']:
+                    try:
+                        self.__open_transactions.remove(opentx)
+                    except ValueError:
+                        print('Item was already removed')
         self.save_data()
         return True
+    
+
+    def resolve_conflicts(self):
+        longest_chain = self.__chain
+        replace_chain = False
+        for node in self.__peer_nodes:
+            url = 'http://{}/chain'.format(node)
+            try:
+                response =  requests.get(url)
+                node_chain = response.json()
+                node_chain = [Block(block['index'], block['previous_hash'], [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']], block['proof'], block['timestamp']) for block in node_chain]
+                node_chain_length = len(node_chain)
+                local_chain_length = len(longest_chain)
+                if (node_chain_length > local_chain_length) and verification.verify_chain(node_chain):
+                    longest_chain = node_chain
+                    replace_chain = True
+            except requests.exceptions.ConnectionError:
+                continue
+        self.conflicts = False
+        self.__chain = longest_chain
+        if replace_chain:
+            self.__open_transactions = []
+        self.save_data()
+        return replace_chain
 
     def get_balance(self, sender=None):
         if sender == None:
