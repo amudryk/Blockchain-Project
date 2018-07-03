@@ -79,9 +79,11 @@ def broadcast_block():
             return jsonify(response), 201
         else:
             response = {'message': 'Block Invalid.'}
-            return jsonify(response), 500
+            return jsonify(response), 409
     elif block['index'] > chain[-1].index:
-        pass
+        response = {'message': 'Blockchain differs from local blockchain'}
+        blockchain.conflicts = True
+        return jsonify(response), 200
     else: 
         response = {'message': 'Blockchain is shorter, block not added'}
         return jsonify(response), 409
@@ -144,8 +146,11 @@ def add_transaction():
 
 @app.route('/mine', methods=['POST'])
 def mine():
-    mined_block = blockchain.mine_block()
+    if blockchain.conflicts:
+        response = {'message': 'Resolve conflicts first, block not added.'}
+        return jsonify(response), 409
     
+    mined_block = blockchain.mine_block()
     if mined_block != None:
         dict_block = mined_block.__dict__.copy()
         dict_block['transactions'] = [tx.__dict__ for tx in dict_block['transactions']]
@@ -161,6 +166,15 @@ def mine():
             'wallet_set_up': wallet.public_key != None
         }
         return jsonify(response), 500
+
+@app.route('/resolve-conflicts', methods=['POST'])
+def resolve_conflicts():
+    replaced_chain = blockchain.resolve_conflicts()
+    if replaced_chain:
+        response = {'message': 'Chain replaced.'}
+    else:
+        response = {'message': 'Local chain kept.'}
+    return jsonify(response), 200
 
 @app.route('/chain', methods=['GET'])
 def get_chain():
