@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+
 class Transaction:
     def __init__(self, sender, recipient, signature, amount):
         self.sender =  sender

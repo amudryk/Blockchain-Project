@@ -13,6 +13,7 @@ import verification
 
 MINING_REWARD = 10
 
+
 class Blockchain:
     def __init__(self, public_key, node_id):
         genesis_block = Block(0, '', [], 99, 0)
@@ -23,18 +24,17 @@ class Blockchain:
         self.node_id = node_id
         self.conflicts = False
         self.load_data()
-        
 
     def get_chain(self):
         return self.__chain[:]
-    
+
     def get_open_transactions(self):
         return self.__open_transactions[:]
 
     def add_transaction(self, recipient, hosting_node, signature, amount=1.0, is_receiving=False):
-        #if self.public_key == None:
+        # if self.public_key == None:
         #    return False
-        
+      
         transaction = Transaction(hosting_node, recipient, signature, amount)
         if verification.verify_transaction(transaction, self.get_balance):
             self.__open_transactions.append(transaction) 
@@ -51,15 +51,15 @@ class Blockchain:
                         continue
             return True 
         return False
-    
+
     def mine_block(self):
-        if self.public_key == None:
+        if self.public_key is None:
             return None
-        
+ 
         last_block = self.__chain[-1]
         previous_hash = hash_block(last_block)
         proof = self.proof_of_work()
-        
+
         reward_transaction = Transaction('MINING', self.public_key, '', MINING_REWARD)
         
         copied_transactions = self.__open_transactions[:]
@@ -107,14 +107,13 @@ class Blockchain:
         self.save_data()
         return True
     
-
     def resolve_conflicts(self):
         longest_chain = self.__chain
         replace_chain = False
         for node in self.__peer_nodes:
             url = 'http://{}/chain'.format(node)
             try:
-                response =  requests.get(url)
+                response = requests.get(url)
                 node_chain = response.json()
                 node_chain = [Block(block['index'], block['previous_hash'], [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']], block['proof'], block['timestamp']) for block in node_chain]
                 node_chain_length = len(node_chain)
@@ -132,7 +131,7 @@ class Blockchain:
         return replace_chain
 
     def get_balance(self, sender=None):
-        if sender == None:
+        if sender is None:
             if self.public_key == None:
                 return None
             participant = self.public_key
@@ -152,10 +151,10 @@ class Blockchain:
     def load_data(self):
 
         try:
-            with open ('blockchain-{}.txt'.format(self.node_id), mode='r') as f:
-                #file_content = pickle.loads(file.read())
-                #blockchain = file_content['chain']
-                #open_transactions = file_content['ot']
+            with open('blockchain-{}.txt'.format(self.node_id), mode='r') as f:
+                # file_content = pickle.loads(file.read())
+                # blockchain = file_content['chain']
+                # open_transactions = file_content['ot']
                 
                 file_content = f.readlines()
                 
@@ -176,10 +175,9 @@ class Blockchain:
 
                 peer_nodes = json.loads(file_content[2])
                 self.__peer_nodes = set(peer_nodes)
-        except (IOError,IndexError):
+        except (IOError, IndexError):
             pass
 
-    
     def save_data(self):
         try:
             with open('blockchain-{}.txt'.format(self.node_id), mode='w') as f:
@@ -191,9 +189,9 @@ class Blockchain:
                 f.write('\n')
                 f.write(json.dumps(list(self.__peer_nodes)))
                 
-                #pickle(binary) code
-                #save_data = { 'chain': blockchain, 'ot': open_transactions }
-                #file.write(pickle.dumps(save_data))
+                # pickle(binary) code
+                # save_data = { 'chain': blockchain, 'ot': open_transactions }
+                # file.write(pickle.dumps(save_data))
         except IOError:
             print('Saving failed!')
 
@@ -215,5 +213,3 @@ class Blockchain:
 
     def get_peer_nodes(self):
         return list(self.__peer_nodes)  
-
-
