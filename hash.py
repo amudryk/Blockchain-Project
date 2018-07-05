@@ -1,6 +1,7 @@
 import hashlib
 import json
 
+
 def hash_block(block):
     hashable_block = block.__dict__.copy()
     hashable_block['transactions'] = [tx.ordered_dict() for tx in hashable_block['transactions']]
